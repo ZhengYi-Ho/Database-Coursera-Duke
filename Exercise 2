@@ -37,3 +37,24 @@ ORDER BY SKSTINFO.sku ASC;
 ## Exercise 9
 ## What department (with department description), brand, style, and color had the greatest total value of returned items? 
 
+SELECT d.dept, d.deptdesc, s.brand, s.style, s.color, SUM(t.amt)
+FROM trnsact t JOIN skuinfo s 
+ON t.sku=s.sku
+JOIN deptinfo d
+ON s.dept=d.dept
+WHERE t.stype='R'
+GROUP BY d.dept, d.deptdesc, s.brand, s.style, s.color
+ORDER BY SUM(t.amt);
+
+# 4505 POLOMEN POLO FAS 4GZ 782633 U KHAKI 
+
+## Exercise 10
+## In what state and zip code is the store that had the greatest total revenue during the time period monitored in our dataset? 
+
+SELECT s.state, s.zip, s.city, s.store, SUM(t.amt)
+FROM strinfo s, trnsact t
+WHERE s.store=t.store AND stype='P'
+GROUP BY s.state, s.zip, s.city, s.store
+ORDER BY SUM(t.amt) DESC;
+
+# LA 70002 METAIRIE
