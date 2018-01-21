@@ -1,1 +1,27 @@
+## Specific Goals:
+## Practice using subqueries
+## Practice using CASE statements and conditional logic
+## Practice constructing longer queries in a step-wise fashion to address multiple computations or pieces of logic
+## Practice translating real analysis questions into SQL queries
+## Gain experience with how to handle “messy data” in SQL queries and analyses
+## Gain an appreciation for how long it can take to design queries that address important analysis questions 
 
+## Encouragement from mentor:
+## Upon finishing the course you feel confident that you know how to work through any query you need to write in the future. 
+
+## Warning: Teradata doesn't permit to use IF statement
+
+
+## Exercise 1
+## How many distinct dates are there in the saledate column of the transaction table for each month/year combination in the database? 
+
+SELECT EXTRACT(YEAR from saledate) as year_num, EXTRACT(MONTH from saledate) as month_num, 
+COUNT(DISTINCT saledate) 
+FROM trnsact
+GROUP BY year_num, month_num
+ORDER BY year_num ASC, month_num ASC;
+# There are some missing dates due to Thanksgiving (11.25), Christmas (12.25), etc
+
+## Exercise 2 
+## Use a CASE statement within an aggregate function to determine 
+## which sku had the greatest total sales during the combined summer months of June, July, and August. 
