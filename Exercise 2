@@ -1,5 +1,106 @@
 # Database-Teradata-Exercise-Duke
 
+## Exercise 1
+## (a) Use COUNT and DISTINCT to determine how many distinct skus there are in pairs of the skuinfo, skstinfo, and trnsact tables. 
+## Which skus are common to pairs of tables, or unique to specific tables? 
+
+SELECT COUNT(DISTINCT sku)
+FROM skuinfo 
+# 1564178
+
+SELECT COUNT(DISTINCT sku)
+FROM skstinfo 
+# 760212
+
+SELECT COUNT(DISTINCT sku)
+FROM trnsact 
+# 714499
+
+SELECT COUNT(DISTINCT s.sku)
+FROM skuinfo s JOIN skstinfo
+ON s.sku=skstinfo.sku
+JOIN trnsact t
+ON s.sku=t.sku;
+# 542513
+
+## (b) Use COUNT to determine how many instances there are of each sku associated with each store in the skstinfo table and the trnsact table? 
+
+SELECT sku, store, COUNT(*)
+FROM skstinfo
+GROUP BY sku, store
+ORDER BY sku ASC, store ASC;
+# 39230146 Rows in total / 1 insatnce for each 
+
+SELECT sku, store, COUNT(*)
+FROM trnsact
+GROUP BY sku, store
+ORDER BY COUNT(*) DESC;
+# 36099491 Rows in total / Max 7933 instances for sku # 4628597
+
+## Exercise 2
+## (a) Use COUNT and DISTINCT to determine how many distinct stores there are in the strinfo, store_msa, skstinfo, and trnsact tables. 
+
+SELECT COUNT(DISTINCT store)
+FROM strinfo;
+# 453
+
+SELECT COUNT(DISTINCT store)
+FROM store_msa;
+# 333
+
+SELECT COUNT(DISTINCT store)
+FROM skstinfo;
+# 357
+
+SELECT COUNT(DISTINCT store)
+FROM trnsact;
+# 332
+
+NumStores: strinfo > skstinfo > store_msa > trnsact
+
+## (b) Which stores are common to all four tables, or unique to specific tables? 
+
+SELECT s.store
+FROM ((skstinfo s JOIN strinfo
+ON s.store=strinfo.store)
+JOIN trnsact t
+ON strinfo.store=t.store)
+JOIN store_msa
+ON t.store=store_msa.store;
+
+## Exercise 3
+## Examine some of the rows in the trnsact table that are not in the skstinfo table;
+## Can you find any common features that could explain why the cost information is missing?
+
+## Exercise 4
+## Although we can’t complete all the analyses we’d like to on Dillard’s profit, we can look at general trends. 
+## What is Dillard’s average profit per day?
+
+SELECT t.register, (SUM(t.amt-s.cost)/COUNT(DISTINCT t.saledate))
+FROM skstinfo s JOIN trnsact t
+ON s.sku=t.sku AND s.store=t.store
+WHERE stype='P'
+GROUP BY t.register;
+# 10,779.20 for register # 6__ 
+
+## Exercise 5
+## On what day was the total value (in $) of returned goods the greatest? 
+## On what day was the total number of individual returned items the greatest?
+
+SELECT saledate,SUM(amt)
+FROM trnsact 
+WHERE stype='R'
+GROUP BY saledate
+ORDER BY SUM(amt) DESC;
+# 04/12/27
+
+SELECT saledate,SUM(quantity)
+FROM trnsact 
+WHERE stype='R'
+GROUP BY saledate
+ORDER BY SUM(quantity) DESC;
+# 04/12/27
+
 ## Exercise 6
 ## What is the maximum price paid for an item in our database? 
 ## What is the minimum price paid for an item in our database?
