@@ -25,3 +25,42 @@ ORDER BY year_num ASC, month_num ASC;
 ## Exercise 2 
 ## Use a CASE statement within an aggregate function to determine 
 ## which sku had the greatest total sales during the combined summer months of June, July, and August. 
+
+SELECT sku, SUM(amt)
+FROM trnsact
+WHERE stype='P'
+AND saledate = CASE WHEN
+EXTRACT(MONTH from saledate)=6 
+OR EXTRACT(MONTH from saledate)=7
+OR EXTRACT(MONTH from saledate)=8
+THEN saledate
+END 
+GROUP BY sku
+ORDER BY SUM(amt) DESC;
+# 4108011 1646017.38
+
+## Exercise 3
+## How many distinct dates are there in the saledate column of the transaction table for each month/year/store combination in the database? 
+## Sort your results by the number of days per combination in ascending order. 
+
+SELECT store, 
+EXTRACT(MONTH from saledate) as month_num,
+EXTRACT(YEAR from saledate) as year_num,
+COUNT(DISTINCT saledate)
+FROM trnsact
+GROUP BY store, month_num, year_num, saledate
+ORDER BY store ASC, year_num ASC, month_num ASC, saledate ASC, COUNT(saledate);
+
+## Exercise 4
+## What is the average daily revenue for each store/month/year combination in the database? 
+## Calculate this by dividing the total revenue for a group by the number of sales days available in the transaction table for that group.
+
+SELECT store, 
+EXTRACT(MONTH from saledate) as month_num,
+EXTRACT(YEAR from saledate) as year_num,
+COUNT(DISTINCT saledate),
+SUM(amt)/COUNT(DISTINCT saledate)
+FROM trnsact
+WHERE stype='P'
+GROUP BY store, month_num, year_num
+ORDER BY store ASC, year_num ASC, month_num ASC, COUNT(DISTINCT saledate);
