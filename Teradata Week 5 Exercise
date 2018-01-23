@@ -64,3 +64,60 @@ FROM trnsact
 WHERE stype='P'
 GROUP BY store, month_num, year_num
 ORDER BY store ASC, year_num ASC, month_num ASC, COUNT(DISTINCT saledate);
+
+##  removes all the data from August, 2005
+
+SELECT store, 
+EXTRACT(MONTH from saledate) as month_num,
+EXTRACT(YEAR from saledate) as year_num,
+COUNT(DISTINCT saledate),
+SUM(amt)/COUNT(DISTINCT saledate)
+FROM trnsact
+WHERE stype='P' 
+AND saledate NOT BETWEEN DATE '2005-08-01' AND LAST_DAY(DATE '2005-08-27')
+GROUP BY store, month_num, year_num
+ORDER BY store ASC, year_num ASC, month_num ASC, COUNT(DISTINCT saledate);
+
+## removes saledate that are less than 20 days 
+## (a) using Having statement
+
+SELECT store, 
+EXTRACT(MONTH from saledate) as month_num,
+EXTRACT(YEAR from saledate) as year_num,
+COUNT(DISTINCT saledate),
+SUM(amt)/COUNT(DISTINCT saledate)
+FROM trnsact
+WHERE stype='P' 
+AND saledate NOT BETWEEN DATE '2005-08-01' AND LAST_DAY(DATE '2005-08-27')
+GROUP BY store, month_num, year_num
+HAVING COUNT(DISTINCT saledate) > 20
+ORDER BY store ASC, year_num ASC, month_num ASC;
+
+## (b) using subquery
+
+SELECT store, month_num, year_num, dis_saledate, AvgRevenue
+FROM (SELECT store, 
+      EXTRACT(MONTH from saledate) as month_num,
+      EXTRACT(YEAR from saledate) as year_num,
+      COUNT(DISTINCT saledate) as dis_saledate,
+      SUM(amt)/COUNT(DISTINCT saledate) as AvgRevenue
+      FROM trnsact
+      WHERE stype='P' 
+      AND (saledate NOT BETWEEN DATE '2005-08-01' AND LAST_DAY(DATE '2005-08-27'))
+      GROUP BY store, month_num, year_num
+      HAVING COUNT(DISTINCT saledate) > 20) as subquery
+ORDER BY store ASC, year_num ASC, month_num ASC;
+
+## avg daily revenue after concatenation
+
+SELECT store, month_year_num, dis_saledate, AvgRevenue
+FROM (SELECT store, 
+      EXTRACT(MONTH from saledate) || EXTRACT(YEAR from saledate) as month_year_num,
+      COUNT(DISTINCT saledate) as dis_saledate,
+      SUM(amt)/COUNT(DISTINCT saledate) as AvgRevenue
+      FROM trnsact
+      WHERE stype='P' 
+      AND (saledate NOT BETWEEN DATE '2005-08-01' AND LAST_DAY(DATE '2005-08-27'))
+      GROUP BY store, month_year_num
+      HAVING COUNT(DISTINCT saledate) > 20) as subquery
+ORDER BY dis_saledate ASC;
