@@ -121,3 +121,14 @@ FROM (SELECT store,
       GROUP BY store, month_year_num
       HAVING COUNT(DISTINCT saledate) > 20) as subquery
 ORDER BY dis_saledate ASC;
+
+## How do the population statistics of the geographical location surrounding a store relate to sales performance?
+## Exercise 5
+## What is the average daily revenue brought in by Dillard’s stores in areas of high, medium, or low levels of high school education?
+
+
+
+
+
+
+
