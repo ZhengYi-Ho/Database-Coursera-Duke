@@ -195,3 +195,27 @@ ORDER BY STDDEV_SAMP(t.sprice) DESC;
 ## but only consider skus that are part of more than 100 transactions.
 
 ## Exercise 9: What was the average daily revenue Dillard’s brought in during each month of the year?
+
+SELECT month_year_num, SUM(subquery.amt)/SUM(subquery.saledate) as Avg_daily_revenue
+FROM (SELECT store, 
+      EXTRACT(MONTH from saledate) || EXTRACT(YEAR from saledate) as month_year_num,
+      COUNT(DISTINCT saledate) as dis_saledate,
+      SUM(amt) as amt, COUNT(DISTINCT saledate) as saledate
+      FROM trnsact
+      WHERE stype='P' 
+      AND (saledate NOT BETWEEN DATE '2005-08-01' AND LAST_DAY(DATE '2005-08-27'))
+      GROUP BY store, month_year_num
+      HAVING COUNT(DISTINCT saledate) > 20) as subquery
+GROUP BY month_year_num
+ORDER BY month_year_num ASC;
+
+
+select distinct (extract(month from saledate) || extract(year from saledate)) as my
+		,(sum(amt)/count(distinct saledate)) as dailyrev
+from trnsact 
+group by my
+where stype = 'p' 
+	and oreplace(my, ' ', '') 
+		not like '%82005%'
+having count(distinct saledate) > 20
+order by dailyrev desc;
