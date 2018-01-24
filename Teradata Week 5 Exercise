@@ -126,9 +126,72 @@ ORDER BY dis_saledate ASC;
 ## Exercise 5
 ## What is the average daily revenue brought in by Dillard’s stores in areas of high, medium, or low levels of high school education?
 
+(a) preferable way 
+SELECT CASE 
+WHEN store_msa.msa_high>=50 AND store_msa.msa_high<=60 THEN 'low'
+WHEN store_msa.msa_high>=60.1 AND store_msa.msa_high <=70 THEN 'medium'
+WHEN store_msa.msa_high>70 THEN 'high'
+END AS rate,
+SUM(trnsact.amt)/SUM(trnsact.saledate) as AvgRevenue
+FROM (SELECT store, SUM(amt) as amt, COUNT(DISTINCT saledate) as saledate
+      FROM trnsact 
+      WHERE stype='P' 
+      AND (saledate NOT BETWEEN DATE '2005-08-01' AND LAST_DAY(DATE '2005-08-27'))
+      GROUP BY store
+      HAVING COUNT(DISTINCT saledate)>20) as trnsact 
+JOIN store_msa
+ON trnsact.store=store_msa.store
+GROUP BY rate;
 
+(b)
+SELECT CASE 
+WHEN subquery.msa_high>=50 AND subquery.msa_high<=60 THEN 'low'
+WHEN subquery.msa_high>=60.1 AND subquery.msa_high <=70 THEN 'medium'
+WHEN subquery.msa_high>70 THEN 'high'
+END AS rate,
+SUM(subquery.amt)/SUM(subquery.saledate) as AvgRevenue
+FROM (SELECT s.store, s.msa_high, SUM(t.amt) as amt, COUNT(DISTINCT t.saledate) as saledate
+      FROM trnsact t JOIN store_msa s
+      ON t.store=s.store
+      WHERE t.stype='P' 
+      AND (t.saledate NOT BETWEEN DATE '2005-08-01' AND LAST_DAY(DATE '2005-08-27'))
+      GROUP BY s.store, s.msa_high
+      HAVING COUNT(DISTINCT t.saledate)>20) as subquery
+GROUP BY rate;
 
+## Exercise 6
+## Compare the average daily revenues of the stores with the highest median msa_income and the lowest median msa_income. 
+## In what city and state were these stores, and which store had a higher average daily revenue?
 
+SELECT store_msa.store, store_msa.city, store_msa.state, SUM(trnsact.amt)/SUM(saledate) as AvgRevenue,
+MEDIAN(store_msa.msa_income) as median_income
+FROM (SELECT store, SUM(amt) as amt, COUNT(DISTINCT saledate) as saledate
+      FROM trnsact
+      WHERE stype='P' 
+      AND (saledate NOT BETWEEN DATE '2005-08-01' AND LAST_DAY(DATE '2005-08-27'))
+      GROUP BY store
+      HAVING COUNT(DISTINCT saledate) > 20) as trnsact
+JOIN store_msa
+ON trnsact.store=store_msa.store
+GROUP BY store_msa.store, store_msa.city, store_msa.state
+ORDER BY median_income DESC, store_msa.city ASC;
+# 390 2SPANISH FORT AL 17884.08 56099
+# 2707 MCALLEN TX 56601.99 16022
 
+## Exercise 7
+## What is the brand of the sku with the greatest standard deviation in sprice?
+## Only examine skus that have been part of over 100 transactions. 
 
+SELECT t.sku, s.brand, STDDEV_SAMP(t.sprice)
+FROM trnsact t JOIN skuinfo s
+ON t.sku=s.sku
+GROUP BY t.sku, s.brand
+HAVING COUNT(t.saledate)>100
+ORDER BY STDDEV_SAMP(t.sprice) DESC;
+# 3733090 CABERNET 178.6
 
+## Exercise 8
+## Examine all the transactions for the sku with the greatest standard deviation in sprice, 
+## but only consider skus that are part of more than 100 transactions.
+
+## Exercise 9: What was the average daily revenue Dillard’s brought in during each month of the year?
