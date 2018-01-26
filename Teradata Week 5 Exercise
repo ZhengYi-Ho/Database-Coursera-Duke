@@ -238,7 +238,7 @@ ORDER BY growth DESC;
 ## What is the city and state of the store that had the greatest decrease in average daily revenue from August to September?
 
 SELECT revenue.state, revenue.city, revenue.store, d.deptdesc, revenue.Revaug/revenue.Dayaug as dailyaug,
-revenue.Revsep/revenue.Daysep as dailysep, ((dailysep-dailyaug)/dailyaug) as growth
+revenue.Revsep/revenue.Daysep as dailysep, (dailysep-dailyaug) as growth
 FROM(SELECT  s.state, s.city, t.sku, s.store, 
 SUM(CASE WHEN EXTRACT(MONTH from t.saledate)=8 THEN amt END) as Revaug,
 SUM(CASE WHEN EXTRACT(MONTH from t.saledate)=9 THEN amt END) as Revsep,
@@ -258,5 +258,63 @@ JOIN deptinfo d
 ON s.dept=d.dept
 GROUP BY revenue.state, revenue.city, revenue.store, d.deptdesc, dailyaug, dailysep
 ORDER BY growth DESC;
-# TN KNOXVILLE 2804 CLINIQUE 424.70(Aug) 43.46(Sep) -0.90
+# KY LOUISVILLE 9103 CLINIQUE 472.82(Aug) 49.88(Sep) -422.94
 
+## Exercise 12
+## Determine the month of maximum total revenue for each store. 
+## Count the number of stores whose month of maximum total revenue was in each of the twelve months. 
+## Then determine the month of maximum average daily revenue. 
+## Count the number of stores whose month of maximum average daily revenue was in each of the twelve months. 
+## How do they compare?
+
+SELECT  
+COUNT(CASE WHEN rev.m=1 THEN rev.m END),
+COUNT(CASE WHEN rev.m=2 THEN rev.m END),
+COUNT(CASE WHEN rev.m=3 THEN rev.m END),
+COUNT(CASE WHEN rev.m=4 THEN rev.m END),
+COUNT(CASE WHEN rev.m=5 THEN rev.m END),
+COUNT(CASE WHEN rev.m=6 THEN rev.m END),
+COUNT(CASE WHEN rev.m=7 THEN rev.m END),
+COUNT(CASE WHEN rev.m=8 THEN rev.m END),
+COUNT(CASE WHEN rev.m=9 THEN rev.m END),
+COUNT(CASE WHEN rev.m=10 THEN rev.m END),
+COUNT(CASE WHEN rev.m=11 THEN rev.m END),
+COUNT(CASE WHEN rev.m=12 THEN rev.m END) as num_month
+FROM(SELECT store, EXTRACT(MONTH from saledate) as m, SUM(amt) as revenue, RANK()OVER(PARTITION BY store ORDER BY revenue DESC) as ranking
+     FROM trnsact
+     WHERE stype='P' 
+     AND (saledate NOT BETWEEN DATE '2005-08-01' AND LAST_DAY(DATE '2005-08-27'))
+     GROUP BY store, m
+     HAVING COUNT(DISTINCT saledate) > 20
+     QUALIFY ranking <= 1) as rev;
+# March  3
+# July  3
+# September  1
+# December  321
+
+SELECT  
+COUNT(CASE WHEN rev.m=1 THEN rev.m END) as jan,
+COUNT(CASE WHEN rev.m=2 THEN rev.m END) as feb,
+COUNT(CASE WHEN rev.m=3 THEN rev.m END) as mar,
+COUNT(CASE WHEN rev.m=4 THEN rev.m END) as apr,
+COUNT(CASE WHEN rev.m=5 THEN rev.m END) as may,
+COUNT(CASE WHEN rev.m=6 THEN rev.m END) as jun,
+COUNT(CASE WHEN rev.m=7 THEN rev.m END) as jul,
+COUNT(CASE WHEN rev.m=8 THEN rev.m END) as aug,
+COUNT(CASE WHEN rev.m=9 THEN rev.m END) as sep,
+COUNT(CASE WHEN rev.m=10 THEN rev.m END) as oct,
+COUNT(CASE WHEN rev.m=11 THEN rev.m END) as nov,
+COUNT(CASE WHEN rev.m=12 THEN rev.m END) 
+FROM (SELECT store, EXTRACT(MONTH from saledate) as m, SUM(amt)/COUNT(DISTINCT saledate) as avgdaily_rev , RANK()OVER(PARTITION BY store ORDER BY avgdaily_rev DESC) as ranking
+     FROM trnsact
+     WHERE stype='P' 
+     AND (saledate NOT BETWEEN DATE '2005-08-01' AND LAST_DAY(DATE '2005-08-27'))
+     GROUP BY store, m
+     HAVING COUNT(DISTINCT saledate) > 20
+     QUALIFY ranking <= 1) as rev;
+# February  2
+# March 4
+# May  1
+# July  3
+# September  1
+# December 317
