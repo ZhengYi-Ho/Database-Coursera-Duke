@@ -196,26 +196,67 @@ ORDER BY STDDEV_SAMP(t.sprice) DESC;
 
 ## Exercise 9: What was the average daily revenue Dillard’s brought in during each month of the year?
 
-SELECT month_year_num, SUM(subquery.amt)/SUM(subquery.saledate) as Avg_daily_revenue
-FROM (SELECT store, 
-      EXTRACT(MONTH from saledate) || EXTRACT(YEAR from saledate) as month_year_num,
-      COUNT(DISTINCT saledate) as dis_saledate,
-      SUM(amt) as amt, COUNT(DISTINCT saledate) as saledate
-      FROM trnsact
-      WHERE stype='P' 
-      AND (saledate NOT BETWEEN DATE '2005-08-01' AND LAST_DAY(DATE '2005-08-27'))
-      GROUP BY store, month_year_num
-      HAVING COUNT(DISTINCT saledate) > 20) as subquery
+SELECT  EXTRACT(MONTH from saledate) || EXTRACT(YEAR from saledate) as month_year_num,
+SUM(amt)/COUNT(DISTINCT saledate) as AVG_DAILY_REVENUE
+FROM trnsact
+WHERE stype='P' 
+AND (saledate NOT BETWEEN DATE '2005-08-01' AND LAST_DAY(DATE '2005-08-27'))
 GROUP BY month_year_num
-ORDER BY month_year_num ASC;
+HAVING COUNT(DISTINCT saledate) > 20
+ORDER BY AVG_DAILY_REVENUE DESC;
+# 12 2004 11333356.01
+# 2  2005 7363752.69
+# 7  2005 7271088.69
 
+## Exercise 10
+## Which department, in which city and state of what store, 
+## had the greatest % increase in average daily sales revenue from November to December?
 
-select distinct (extract(month from saledate) || extract(year from saledate)) as my
-		,(sum(amt)/count(distinct saledate)) as dailyrev
-from trnsact 
-group by my
-where stype = 'p' 
-	and oreplace(my, ' ', '') 
-		not like '%82005%'
-having count(distinct saledate) > 20
-order by dailyrev desc;
+SELECT revenue.state, revenue.city, revenue.store, d.deptdesc, revenue.RevNov/revenue.DayNov as dailynov,
+revenue.RevDec/revenue.DayDec as dailydec, ((dailydec-dailynov)/dailynov) as growth
+FROM(SELECT  s.state, s.city, t.sku, s.store, 
+SUM(CASE WHEN EXTRACT(MONTH from t.saledate)=11 THEN amt END) as RevNov,
+SUM(CASE WHEN EXTRACT(MONTH from t.saledate)=12 THEN amt END) as RevDec,
+COUNT(DISTINCT CASE WHEN EXTRACT(MONTH from t.saledate)=11 THEN t.saledate END) as DayNov,
+COUNT(DISTINCT CASE WHEN EXTRACT (MONTH from t.saledate)=12 THEN t.saledate END) as DayDec, 
+RevNov/DayNov as avgnov, 
+RevDec/DayDec as avgdec
+FROM trnsact t JOIN strinfo s
+ON t.store=s.store
+WHERE t.stype='P'
+GROUP BY s.state, s.city, t.sku, s.store
+HAVING DayNov > 20 AND DayDec > 20) as revenue
+JOIN skuinfo s
+ON revenue.sku=s.sku
+JOIN deptinfo d
+ON s.dept=d.dept
+GROUP BY revenue.state, revenue.city, revenue.store, d.deptdesc, dailynov, dailydec
+ORDER BY growth DESC;
+# NC CHARLOTTE 5004 CLINIQUE 35.00(Nov) 150.74(Dec) 3.31(%)
+
+## Exercise 11
+## What is the city and state of the store that had the greatest decrease in average daily revenue from August to September?
+
+SELECT revenue.state, revenue.city, revenue.store, d.deptdesc, revenue.Revaug/revenue.Dayaug as dailyaug,
+revenue.Revsep/revenue.Daysep as dailysep, ((dailysep-dailyaug)/dailyaug) as growth
+FROM(SELECT  s.state, s.city, t.sku, s.store, 
+SUM(CASE WHEN EXTRACT(MONTH from t.saledate)=8 THEN amt END) as Revaug,
+SUM(CASE WHEN EXTRACT(MONTH from t.saledate)=9 THEN amt END) as Revsep,
+COUNT(DISTINCT CASE WHEN EXTRACT(MONTH from t.saledate)=8 THEN t.saledate END) as Dayaug,
+COUNT(DISTINCT CASE WHEN EXTRACT (MONTH from t.saledate)=9 THEN t.saledate END) as Daysep, 
+Revaug/Dayaug as avgaug, 
+Revsep/Daysep as avgsep
+FROM trnsact t JOIN strinfo s
+ON t.store=s.store
+WHERE t.stype='P' 
+AND (t.saledate NOT BETWEEN DATE '2005-08-01' AND LAST_DAY(DATE '2005-08-27'))
+GROUP BY s.state, s.city, t.sku, s.store
+HAVING Dayaug > 20 AND Daysep > 20) as revenue
+JOIN skuinfo s
+ON revenue.sku=s.sku
+JOIN deptinfo d
+ON s.dept=d.dept
+GROUP BY revenue.state, revenue.city, revenue.store, d.deptdesc, dailyaug, dailysep
+ORDER BY growth DESC;
+# TN KNOXVILLE 2804 CLINIQUE 424.70(Aug) 43.46(Sep) -0.90
+
